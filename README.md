@@ -74,4 +74,80 @@ Type in your command, and the AI agent will work its magic! When you're done, ty
 - **Persistence**: Your projects and their details are saved in projects.json, so you don’t have to re-enter info every time.
 - **Verbose Logging**: The agent is set to verbose mode, which is great for debugging and seeing how your instructions get translated into function calls.
 
+### Example utilization
 
+
+```
+python main.py 
+
+Welcome to the Serverless Project AI Agent Tool!
+
+You can ask things like:
+ - 'Create a serverless project named my_project'
+ - 'Delete the serverless project named my_project'
+ - 'Get the status of the serverless project named my_project'
+ - 'Get the details of the serverless project named my_project'
+
+User: Create a serverless project named my-february-test
+Added user message to memory: Create a serverless project named my-february-test
+
+=== Calling Function ===
+Calling function: create_ess_project with args: {"project_name":"my-february-test"}
+========================
+
+
+Agent: The serverless Elasticsearch project named "my-february-test" has been created successfully. Here are the details:
+
+- **Project ID:** <>>
+- **Elasticsearch Endpoint:** [https://my-february-test-ccc399.es.eu-west-1.aws.qa.elastic.cloud](https://my-february-test-ccc399.es.eu-west-1.aws.qa.elastic.cloud)
+- **Kibana Endpoint:** [https://my-february-test-ccc399.kb.eu-west-1.aws.qa.elastic.cloud](https://my-february-test-ccc399.kb.eu-west-1.aws.qa.elastic.cloud)
+
+User: get my-february-test status
+Added user message to memory: get my-february-test status
+
+=== Calling Function ===
+Calling function: get_ess_project_status with args: {"project_name":"my-february-test"}
+========================
+
+Agent: The status of the "my-february-test" project is currently **initializing**.
+
+User: get my-february-test info
+Added user message to memory: get my-february-test info
+
+=== Calling Function ===
+Calling function: get_ess_project_details with args: {"project_name":"my-february-test"}
+========================
+
+Agent: Here are the details for the "my-february-test" project:
+
+- **Project Name:** my-february-test
+- **Alias:** my-february-test-ccc399
+- **Cloud ID:** ""
+- **Project ID:** ""
+- **Region ID:** aws-eu-west-1
+- **Created At:** 2025-02-12T15:42:00.530177619Z
+- **Created By:** 571213384
+- **Organization ID:** ""
+- **Type:** Elasticsearch
+- **Optimized For:** General Purpose
+- **Search Lake:**
+  - **Boost Window:** 7
+  - **Search Power:** 100
+- **Endpoints:**
+  - **Elasticsearch:** https://my-february-test-ccc399.es.eu-west-1.aws.qa.elastic.cloud
+  - **Kibana:** https://my-february-test-ccc399.kb.eu-west-1.aws.qa.elastic.cloud
+- **Credentials:**
+  - **Username:** ""
+  - **Password:** ""
+
+Please ensure to keep the credentials secure.
+
+User: please delete the my-february-test project
+Added user message to memory: please delete the my-february-test project
+
+=== Calling Function ===
+Calling function: delete_ess_project with args: {"project_name":"my-february-test"}
+========================
+
+Agent: The "my-february-test" project has been deleted successfully.
+```
