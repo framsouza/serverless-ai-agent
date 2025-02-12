@@ -197,61 +197,6 @@ def get_ess_project_details(project_name: str) -> str:
         details_data["endpoints"] = project_info.get("endpoints")
     return json.dumps(details_data, indent=4)
 
-
-def get_index_status_in_project(project_name: str, index_name: str) -> str:
-    """
-    Retrieves the status/details of an index in a Serverless Elasticsearch project.
-    It looks up the project info from the persisted PROJECT_MAP, then retrieves the project's
-    details to extract the Elasticsearch endpoint from the "endpoints" field and the credentials.
-    
-    The function constructs the index URL as endpoints["elasticsearch"] + "/" + index_name and sends a GET request
-    using HTTP Basic authentication.
-    
-    Returns the index details as a formatted JSON string, or an error message if retrieval fails.
-    """
-    project_info = PROJECT_MAP.get(project_name)
-    if not project_info:
-        return f"Error: No project found with name '{project_name}'. Ensure the project was created previously."
-    project_info = normalize_project_info(project_info)
-    
-    project_id = project_info.get("id")
-    env_url = os.environ.get("ES_URL")
-    api_key = os.environ.get("API_KEY")
-    if not env_url or not api_key:
-        return "Error: ES_URL or API_KEY is not set in the environment."
-    
-    details_url = f"{env_url}/api/v1/serverless/projects/elasticsearch/{project_id}"
-    headers = {"Authorization": f"ApiKey {api_key}"}
-    try:
-        resp = requests.get(details_url, headers=headers)
-        resp.raise_for_status()
-    except requests.exceptions.RequestException as e:
-        return f"Error retrieving project details: {e}"
-    
-    details_data = resp.json()
-    credentials = details_data.get("credentials") or project_info.get("credentials")
-    endpoints = details_data.get("endpoints") or project_info.get("endpoints")
-    
-    if not credentials or not credentials.get("username") or not credentials.get("password"):
-        return ("Error: Credentials not available. The project may still be initializing. "
-                "Please wait a few minutes and try again.")
-    
-    if not endpoints or not endpoints.get("elasticsearch"):
-        return "Error: Elasticsearch endpoint not found in project details."
-    
-    username = credentials.get("username")
-    password = credentials.get("password")
-    es_endpoint = endpoints.get("elasticsearch")
-    index_url = f"{es_endpoint}/{index_name}"
-    
-    try:
-        index_resp = requests.get(index_url, auth=(username, password))
-        index_resp.raise_for_status()
-    except requests.exceptions.RequestException as e:
-        return f"Error retrieving index status: {e}"
-    
-    return json.dumps(index_resp.json(), indent=4)
-
 create_project_tool = FunctionTool.from_defaults(
     create_ess_project,
     name="create_ess_project",
