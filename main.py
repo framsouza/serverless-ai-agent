@@ -197,66 +197,6 @@ def get_ess_project_details(project_name: str) -> str:
         details_data["endpoints"] = project_info.get("endpoints")
     return json.dumps(details_data, indent=4)
 
-def create_index_in_project(project_name: str, index_name: str) -> str:
-    """
-    Creates an index in a Serverless Elasticsearch project.
-    It looks up the project info from the persisted PROJECT_MAP, then retrieves the project's
-    details to extract the Elasticsearch endpoint from the "endpoints" field and the credentials.
-    
-    If the management API response does not include credentials or endpoints,
-    the stored values (from creation) are used.
-    
-    The Elasticsearch endpoint is taken from endpoints["elasticsearch"], and HTTP Basic authentication
-    is used with the retrieved credentials.
-    
-    Returns a confirmation message or an error message.
-    """
-    project_info = PROJECT_MAP.get(project_name)
-    if not project_info:
-        return f"Error: No project found with name '{project_name}'. Ensure the project was created previously."
-    project_info = normalize_project_info(project_info)
-    
-    project_id = project_info.get("id")
-    env_url = os.environ.get("ES_URL")
-    api_key = os.environ.get("API_KEY")
-    if not env_url or not api_key:
-        return "Error: ES_URL or API_KEY is not set in the environment."
-    
-    details_url = f"{env_url}/api/v1/serverless/projects/elasticsearch/{project_id}"
-    headers = {
-        "Authorization": f"ApiKey {api_key}",
-        "Content-Type": "application/json"
-    }
-    try:
-        resp = requests.get(details_url, headers=headers)
-        resp.raise_for_status()
-    except requests.exceptions.RequestException as e:
-        return f"Error retrieving project details: {e}"
-    
-    details_data = resp.json()
-    credentials = details_data.get("credentials") or project_info.get("credentials")
-    endpoints = details_data.get("endpoints") or project_info.get("endpoints")
-    
-    if not credentials or not credentials.get("username") or not credentials.get("password"):
-        return ("Error: Credentials not available. The project may still be initializing. "
-                "Please wait a few minutes and try again.")
-    
-    if not endpoints or not endpoints.get("elasticsearch"):
-        return "Error: Elasticsearch endpoint not found in project details."
-    
-    username = credentials.get("username")
-    password = credentials.get("password")
-    es_endpoint = endpoints.get("elasticsearch")
-    index_url = f"{es_endpoint}/{index_name}"
-    index_settings = {}  
-    
-    try:
-        index_resp = requests.put(index_url, json=index_settings, auth=(username, password))
-        index_resp.raise_for_status()
-    except requests.exceptions.RequestException as e:
-        return f"Error creating index: {e}"
-    
-    return f"Index '{index_name}' created successfully in project '{project_name}'."
 
 def get_index_status_in_project(project_name: str, index_name: str) -> str:
     """
@@ -353,38 +293,13 @@ get_details_tool = FunctionTool.from_defaults(
     )
 )
 
-create_index_tool = FunctionTool.from_defaults(
-    create_index_in_project,
-    name="create_index_in_project",
-    description=(
-        "Creates an index in a Serverless Elasticsearch project. "
-        "It requires two parameters: project_name and index_name. "
-        "The function retrieves the project's details to extract the Elasticsearch endpoint (from endpoints.elasticsearch) and credentials, "
-        "then sends a PUT request to create the index. "
-        "It returns a confirmation message or an error message."
-    )
-)
-
-get_index_status_tool = FunctionTool.from_defaults(
-    get_index_status_in_project,
-    name="get_index_status_in_project",
-    description=(
-        "Retrieves the status/details of an index in a Serverless Elasticsearch project. "
-        "It requires two parameters: project_name and index_name. "
-        "The function retrieves the project's details to extract the Elasticsearch endpoint (from endpoints.elasticsearch) and credentials, "
-        "then sends a GET request to retrieve the index details. "
-        "It returns the index details as a formatted JSON string or an error message."
-    )
-)
-
-
 openai_api_key = os.environ.get("OPENAI_API_KEY")
 if not openai_api_key:
     raise ValueError("Please set the OPENAI_API_KEY environment variable with your OpenAI API key.")
 
 llm = OpenAI(model="gpt-4o", api_key=openai_api_key)
 agent = OpenAIAgent.from_tools(
-    [create_project_tool, delete_project_tool, get_status_tool, get_details_tool, create_index_tool, get_index_status_tool],
+    [create_project_tool, delete_project_tool, get_status_tool, get_details_tool],
     llm=llm,
     verbose=True
 )
@@ -396,8 +311,6 @@ def main():
     print(" - 'Delete the serverless project named my_project'")
     print(" - 'Get the status of the serverless project named my_project'")
     print(" - 'Get the details of the serverless project named my_project'")
-    print(" - 'Create an index named my_index in the serverless project named my_project'")
-    print(" - 'Get the status of the index named my_index in the serverless project named my_project'")
     
     while True:
         user_input = input("\nUser: ")
